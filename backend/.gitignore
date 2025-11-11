@@ -1,0 +1,30 @@
+# Node (frontend)
+frontend/node_modules
+frontend/dist
+frontend/.env
+frontend/.DS_Store
+
+# Go (backend)
+backend/bin
+backend/.env
+backend/coverage
+backend/tmp
+backend/*.exe
+backend/*.log
+backend/vendor
+backend/go.sum
+backend/go.work
+
+# Docker artifacts
+*.pid
+*.log
+*.db
+db_data/
+pgdata/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
