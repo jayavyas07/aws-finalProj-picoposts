@@ -1,4 +1,4 @@
-# 📌 PicoPosts — Tiny Social Feed on AWS
+# 📌 PicoPosts - Tiny Social Feed on AWS
 
 > **A micro social platform demonstrating AWS infrastructure, containerized deployment, and secure cloud architecture**
 
