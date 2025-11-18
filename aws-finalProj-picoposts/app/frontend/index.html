@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>PicoPosts</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+            sans-serif;
+            color: #f9fafb;
+            background: radial-gradient(circle at top left, #f97316, #0f172a);
+        }
+        .shell {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .card {
+            max-width: 960px;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.92);
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px rgba(15, 23, 42, 0.7);
+            padding: 2rem 3rem 3rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem;
+        }
+        .subtitle {
+            color: #9ca3af;
+            margin-bottom: 1.5rem;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #e5e7eb;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 2.5rem;
+            margin-top: 1.75rem;
+        }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9ca3af;
+            margin-bottom: 0.35rem;
+        }
+        input,
+        textarea {
+            width: 100%;
+            padding: 0.8rem 0.9rem;
+            border-radius: 0.75rem;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            background: rgba(15, 23, 42, 0.9);
+            color: #f9fafb;
+            outline: none;
+            font-size: 0.95rem;
+        }
+        input:focus,
+        textarea:focus {
+            border-color: #f97316;
+            box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.6);
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        button {
+            border: none;
+            border-radius: 999px;
+            padding: 0.7rem 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.1s ease,
+            background 0.15s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(to right, #f97316, #facc15);
+            color: #111827;
+            box-shadow: 0 10px 20px rgba(249, 115, 22, 0.5);
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 30px rgba(249, 115, 22, 0.7);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: #e5e7eb;
+            border: 1px solid rgba(148, 163, 184, 0.7);
+        }
+        .btn-secondary:hover {
+            background: rgba(148, 163, 184, 0.15);
+        }
+        .stack {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .hint {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        .json-box {
+            border-radius: 0.75rem;
+            border: 1px dashed rgba(148, 163, 184, 0.7);
+            background: rgba(15, 23, 42, 0.7);
+            padding: 1rem;
+            font-family: "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono",
+            "Courier New", monospace;
+            font-size: 0.8rem;
+            color: #d1fae5;
+            max-height: 220px;
+            overflow: auto;
+        }
+        .json-placeholder {
+            color: #6b7280;
+            text-align: center;
+            margin-top: 3rem;
+        }
+        .row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        @media (max-width: 900px) {
+            .card {
+                padding: 1.75rem 1.5rem 2.25rem;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
+            <div>
+                <h1>PicoPosts</h1>
+                <div class="subtitle">
+                    Tiny social feed on AWS (EC2 + RDS + S3 + CloudFront)
+                </div>
+            </div>
+            <div class="badge">AWS-FINALPROJ</div>
+        </div>
+
+        <div class="grid">
+            <!-- LEFT: create user & post -->
+            <div class="stack">
+                <h3>Create user &amp; post</h3>
+                <div class="hint">
+                    Step 1: create a user. Step 2: write a tiny post.
+                </div>
+
+                <div>
+                    <label for="email">Email</label>
+                    <input
+                            id="email"
+                            type="email"
+                            placeholder="you@example.com"
+                            autocomplete="email"
+                    />
+                    <div class="hint">
+                        We’ll create a synthetic userid in the database for this email.
+                    </div>
+                </div>
+
+                <button id="signup-btn" class="btn-primary">Sign up</button>
+
+                <div>
+                    <label for="user-id">User ID</label>
+                    <input
+                            id="user-id"
+                            type="text"
+                            placeholder="paste userid from above"
+                    />
+                    <div class="hint">
+                        Use the generated userid so we can associate posts with this
+                        user.
+                    </div>
+                </div>
+
+                <div>
+                    <label for="content">Content</label>
+                    <textarea
+                            id="content"
+                            placeholder="Write something tiny…"
+                    ></textarea>
+                </div>
+
+                <button id="post-btn" class="btn-primary">Post</button>
+            </div>
+
+            <!-- RIGHT: feed -->
+            <div class="stack">
+                <h3>View feed</h3>
+                <div class="hint">
+                    Paste the userid and load the personalized feed from RDS (via
+                    EC2).
+                </div>
+
+                <div class="row">
+                    <input
+                            id="feed-user-id"
+                            type="text"
+                            placeholder="same userid as above"
+                    />
+                    <button id="feed-btn" class="btn-secondary">Load feed</button>
+                </div>
+
+                <div id="feed-json" class="json-box">
+                    <div class="json-placeholder">
+                        Your posts will show up here as JSON.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- IMPORTANT: script at bottom -->
+<script src="app.js"></script>
+</body>
+</html>
