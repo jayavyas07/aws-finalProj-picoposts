@@ -1,261 +1,353 @@
-📌 PicoPosts — Tiny Social Feed on AWS
+# 📌 PicoPosts — Tiny Social Feed on AWS
 
-EC2 + RDS + S3 + CloudFront + ECR + SSM + Terraform
+> **A micro social platform demonstrating AWS infrastructure, containerized deployment, and secure cloud architecture**
 
-PicoPosts is a fully serverless-ready micro social platform built as an end-to-end cloud project for learning AWS infrastructure, containerized backend deployment, secure credential management, and CDN-accelerated frontend delivery.
+PicoPosts is a full-stack cloud application built to showcase modern AWS services and infrastructure-as-code practices. Users can create accounts, post content, and view their personalized feed—all powered by enterprise-grade AWS services.
 
-Users can:
+**Tech Stack:** EC2 • RDS • S3 • CloudFront • ECR • SSM • Terraform
 
-Create an account (email → UUID)
+---
 
-Create tiny posts
+## 🎯 What Can Users Do?
 
-Load their personalized feed from RDS via the API running on EC2
+- ✅ **Create an account** with email → receive unique UUID
+- ✅ **Post short messages** to their personal feed
+- ✅ **Load their feed** from RDS via a containerized Node.js API
 
-🚀 Architecture Overview
-CloudFront (HTTPS CDN)
-|
-|-- S3 (Static Frontend)
-|
-+-- /api/* → EC2 Application Load Balancer → EC2 Instance (Node.js API)
-|
-+-- RDS MySQL (Private Subnets)
-|
-+-- SSM Parameter Store (DB Password)
-|
-+-- ECR (API Docker Image)
+---
 
+## 🏗️ Architecture Overview
 
-All AWS resources are provisioned using Terraform.
+```
+┌─────────────────────────────────────────────────────────┐
+│                    CloudFront (CDN)                      │
+│                     HTTPS Distribution                   │
+└────┬───────────────────────────────────────────┬────────┘
+     │                                           │
+     │ Static Assets                        │ API Calls
+     ▼                                           ▼
+┌─────────────┐                      ┌──────────────────┐
+│   S3 Bucket │                      │   EC2 Instance   │
+│  (Frontend) │                      │  + Node.js API   │
+│ HTML/CSS/JS │                      │  (Docker)        │
+└─────────────┘                      └────────┬─────────┘
+                                              │
+                         ┌────────────────────┼────────────────┐
+                         │                    │                │
+                         ▼                    ▼                ▼
+                  ┌─────────────┐     ┌─────────────┐  ┌──────────┐
+                  │  RDS MySQL  │     │     SSM     │  │   ECR    │
+                  │  (Private)  │     │  Parameter  │  │  Docker  │
+                  │   Database  │     │    Store    │  │  Images  │
+                  └─────────────┘     └─────────────┘  └──────────┘
+```
 
-✨ Features
+**All infrastructure provisioned with Terraform**
 
-Backend: Node.js + Express (Dockerized)
+### Key Components
 
-Frontend: Pure HTML/JS served from S3 + CloudFront
+| Service | Purpose |
+|---------|---------|
+| **CloudFront** | HTTPS CDN for fast, secure content delivery |
+| **S3** | Static frontend hosting (HTML/JS) |
+| **EC2 + ALB** | Application server running Dockerized Node.js API |
+| **RDS MySQL** | Relational database (private subnets) |
+| **SSM Parameter Store** | Encrypted credential management |
+| **ECR** | Private Docker image registry |
+| **Terraform** | Infrastructure as Code (IaC) |
 
-Database: MySQL on Amazon RDS
+---
 
-Compute: EC2 behind an ALB (Terraform managed)
+## 🚀 Deployment Guide
 
-Secrets: Stored securely in AWS SSM Parameter Store
+### Prerequisites
 
-Images: Stored in Amazon ECR
+Install the following tools:
 
-IaC: Full infrastructure defined using Terraform
+- [AWS CLI](https://aws.amazon.com/cli/) (configured with credentials)
+- [Terraform](https://www.terraform.io/) (v1.0+)
+- [Docker](https://www.docker.com/)
+- MySQL client
 
-CDN: CloudFront distribution for secure HTTPS delivery
-
-🛠 Deployment Instructions
-1. Prerequisites
-
-Install and configure:
-
-AWS CLI
-
-Terraform
-
-Docker
-
-MySQL client
-
-Ensure your AWS CLI is configured:
-
+**Verify AWS configuration:**
+```bash
 aws configure
+aws sts get-caller-identity
+```
 
-2. Build & Push Backend Docker Image to ECR
-   cd backend
-   ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-   REGION=us-west-1
-   REPO_NAME=aws-finalproj-picoposts-api
+---
 
+### Step 1: Build & Push Docker Image to ECR
 
-Create repository (if not exists):
+Navigate to the backend directory and set variables:
 
+```bash
+cd backend
+
+export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+export REGION=us-west-1
+export REPO_NAME=aws-finalproj-picoposts-api
+```
+
+**Create ECR repository** (if it doesn't exist):
+```bash
 aws ecr create-repository \
---repository-name ${REPO_NAME} \
---region ${REGION} || true
+  --repository-name ${REPO_NAME} \
+  --region ${REGION} || true
+```
 
-
-Login and push:
-
+**Authenticate Docker to ECR:**
+```bash
 aws ecr get-login-password --region ${REGION} \
-| docker login --username AWS --password-stdin \
-${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
+  | docker login --username AWS --password-stdin \
+    ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
+```
 
+**Build and push image:**
+```bash
 docker buildx build \
---platform linux/amd64 \
--t ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${REPO_NAME}:latest \
-. \
---push
+  --platform linux/amd64 \
+  -t ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${REPO_NAME}:latest \
+  . \
+  --push
+```
 
+> 📝 **Save the image URI** — you'll need it for Terraform configuration
 
-Copy the final image URI — you'll use it in Terraform.
+---
 
-3. Configure Terraform
-   cd terraform
+### Step 2: Configure Terraform
 
+Navigate to the Terraform directory:
 
-Create terraform.tfvars:
+```bash
+cd terraform
+```
 
-region        = "us-west-1"
-project       = "aws-finalProj-picoposts"
+Create a `terraform.tfvars` file:
 
-db_username   = "appuser"
-db_name       = "picoposts"
+```hcl
+region      = "us-west-1"
+project     = "aws-finalProj-picoposts"
 
-api_image     = "YOUR_ECR_IMAGE_URI"
+db_username = "appuser"
+db_name     = "picoposts"
 
-4. Deploy AWS Infrastructure
-   terraform init
-   terraform plan
-   terraform apply
+api_image   = "YOUR_ECR_IMAGE_URI_HERE"
+```
 
+Replace `YOUR_ECR_IMAGE_URI_HERE` with the ECR image URI from Step 1.
 
-Terraform provisions:
+---
 
-VPC & subnets
+### Step 3: Deploy Infrastructure
 
-Security groups
+Initialize and apply Terraform configuration:
 
-RDS MySQL
+```bash
+terraform init
+terraform plan
+terraform apply
+```
 
-EC2 + ALB + IAM role
+**What gets created:**
+- ✅ VPC with public/private subnets
+- ✅ Security groups and IAM roles
+- ✅ RDS MySQL database
+- ✅ EC2 instance with Application Load Balancer
+- ✅ S3 bucket for frontend
+- ✅ CloudFront distribution
+- ✅ SSM Parameter Store secret
 
-S3 bucket for frontend
+**Important Terraform outputs:**
+- `app_public_ip` — EC2 instance IP
+- `db_primary_endpoint` — RDS endpoint
+- `frontend_bucket` — S3 bucket name
+- `cdn_domain` — CloudFront domain
 
-CloudFront distribution
+---
 
-Parameter Store secret
+### Step 4: Initialize Database Schema
 
-Important outputs:
-
-app_public_ip
-
-db_primary_endpoint
-
-frontend_bucket
-
-cdn_domain
-
-5. Initialize Database Schema
-
-Fetch DB password from SSM:
-
+**Retrieve database password from SSM:**
+```bash
 aws ssm get-parameter \
---name "/app/aws-finalproj-picoposts/db/password" \
---with-decryption \
---query Parameter.Value \
---output text
+  --name "/app/aws-finalproj-picoposts/db/password" \
+  --with-decryption \
+  --query Parameter.Value \
+  --output text
+```
 
-
-Connect:
-
+**Connect to RDS:**
+```bash
 mysql -h <DB_ENDPOINT> -u appuser -p
+```
 
-
-Inside MySQL:
-
+**Run schema creation:**
+```sql
 CREATE DATABASE IF NOT EXISTS picoposts;
 USE picoposts;
 
 CREATE TABLE IF NOT EXISTS users (
-id VARCHAR(36) PRIMARY KEY,
-email VARCHAR(255) NOT NULL,
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id VARCHAR(36) PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS posts (
-id VARCHAR(36) PRIMARY KEY,
-user_id VARCHAR(36) NOT NULL,
-content TEXT NOT NULL,
-created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-FOREIGN KEY (user_id) REFERENCES users(id)
+  id VARCHAR(36) PRIMARY KEY,
+  user_id VARCHAR(36) NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
+```
 
-6. Configure Frontend
+---
 
-In frontend/app.js, update API base:
+### Step 5: Configure & Deploy Frontend
 
-const API_BASE = "";   // CloudFront default (same origin)
+**Update API endpoint** in `frontend/app.js`:
 
+```javascript
+// Recommended: Use same-origin (CloudFront)
+const API_BASE = "";
 
-Or direct to EC2 (not recommended):
+// Alternative: Direct EC2 access (not recommended for production)
+// const API_BASE = "http://<app_public_ip>";
+```
 
-const API_BASE = "http://<app_public_ip>";
+**Upload frontend to S3:**
+```bash
+cd frontend
 
-7. Upload Frontend to S3
-   cd frontend
-
-FRONTEND_BUCKET=<terraform output>
+export FRONTEND_BUCKET=$(terraform output -raw frontend_bucket)
 
 aws s3 sync . s3://${FRONTEND_BUCKET} --delete
+```
 
-8. Invalidate CloudFront Cache
-   aws cloudfront create-invalidation \
-   --distribution-id <DIST_ID> \
-   --paths "/*"
+**Invalidate CloudFront cache:**
+```bash
+export DIST_ID=$(terraform output -raw cloudfront_distribution_id)
 
-✔ Testing the Application
+aws cloudfront create-invalidation \
+  --distribution-id ${DIST_ID} \
+  --paths "/*"
+```
 
-Open:
+---
 
+## ✅ Testing Your Application
+
+Open your CloudFront domain in a browser:
+```
 https://<cdn_domain>
+```
 
-1. Create user
+### Test Workflow
 
-Enter email → SIGN UP
+1. **Create User Account**
+    - Enter email address
+    - Click **SIGN UP**
+    - Copy the generated `userId` (UUID format)
 
-A UUID userId appears
+2. **Create a Post**
+    - Paste your `userId`
+    - Enter post content
+    - Click **POST**
 
-2. Create a post
+3. **View Your Feed**
+    - Paste your `userId`
+    - Click **LOAD FEED**
+    - Your posts appear as JSON
 
-Enter content → POST
+---
 
-3. Load feed
+## 📡 API Reference
 
-Paste same userId → LOAD FEED
-
-Posts appear in JSON format
-
-📡 API Reference
+### Create User
+```http
 POST /api/users
-
-Request:
-
-{
-"email": "jaya@sjsu.edu"
-}
-
-
-Response:
+Content-Type: application/json
 
 {
-"userId": "uuid-string"
+  "email": "user@example.com"
 }
+```
 
+**Response:**
+```json
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+---
+
+### Create Post
+```http
 POST /api/posts
-{
-"userId": "uuid-string",
-"content": "Hello!"
-}
-
-GET /api/feed?userId=<uuid>
-
-Returns:
+Content-Type: application/json
 
 {
-"posts": [
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
+  "content": "Hello, PicoPosts!"
+}
+```
+
+**Response:**
+```json
 {
-"id": "uuid",
-"content": "Hello",
-"created_at": "timestamp"
+  "postId": "660e8400-e29b-41d4-a716-446655440001"
 }
-]
+```
+
+---
+
+### Get Feed
+```http
+GET /api/feed?userId=550e8400-e29b-41d4-a716-446655440000
+```
+
+**Response:**
+```json
+{
+  "posts": [
+    {
+      "id": "660e8400-e29b-41d4-a716-446655440001",
+      "content": "Hello, PicoPosts!",
+      "created_at": "2025-11-18T10:30:00Z"
+    }
+  ]
 }
+```
 
-🧹 Cleanup
+---
 
-To delete all AWS resources:
+## 🧹 Cleanup
 
+To destroy all AWS resources and avoid charges:
+
+```bash
+cd terraform
 terraform destroy
+```
+
+
+
+---
+
+## 📚 Outcomes
+
+This project demonstrates:
+
+- ✅ **Infrastructure as Code** with Terraform
+- ✅ **Containerization** with Docker and ECR
+- ✅ **Secure credential management** using SSM Parameter Store
+- ✅ **Serverless-adjacent architecture** with S3 and CloudFront
+- ✅ **Database design** with RDS MySQL
+- ✅ **API development** with Node.js and Express
+- ✅ **Network security** with VPCs, subnets, and security groups
+- ✅ **CDN optimization** for global content delivery
+
+---
