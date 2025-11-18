@@ -2,7 +2,7 @@
 
 > **A micro social platform demonstrating AWS infrastructure, containerized deployment, and secure cloud architecture**
 
-PicoPosts is a full-stack cloud application built to showcase modern AWS services and infrastructure-as-code practices. Users can create accounts, post content, and view their personalized feed—all powered by enterprise-grade AWS services.
+PicoPosts is a full-stack cloud application built to showcase modern AWS services and infrastructure-as-code practices. Users can create accounts, post content, and view their personalized feed all powered by enterprise-grade AWS services.
 
 **Tech Stack:** EC2 • RDS • S3 • CloudFront • ECR • SSM • Terraform
 
