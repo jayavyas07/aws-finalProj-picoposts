@@ -5,7 +5,7 @@
 resource "aws_security_group" "ecs_host" {
   name        = "${var.project}-ecs-host-sg"
   description = "Allow HTTP from internet and outbound for ECS hosts"
-  vpc_id      = values(aws_subnet.public)[0].vpc_id # use your main VPC resource
+  vpc_id      = values(aws_subnet.public)[0].vpc_id
 
   # Allow HTTP (port 80) from anywhere for now
   ingress {

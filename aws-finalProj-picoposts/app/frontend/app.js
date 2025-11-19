@@ -1,4 +1,4 @@
-// >>>> SET THIS TO YOUR EC2 PUBLIC IP <<<<
+
 const API_BASE = "http://13.56.79.179";
 
 // Simple helper for API calls

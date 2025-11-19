@@ -1,8 +1,8 @@
-#############################
+####
 # EC2 backend for PicoPosts #
-#############################
+####
 
-# Who am I (account id)?
+# (account id)
 data "aws_caller_identity" "current" {}
 
 # Amazon Linux 2 AMI for EC2 instances
@@ -16,9 +16,9 @@ data "aws_ami" "amazon_linux2" {
   }
 }
 
-#########################
+
 # Security Group        #
-#########################
+
 
 resource "aws_security_group" "app_ec2" {
   name        = "${var.project}-app-ec2-sg"
@@ -47,9 +47,9 @@ resource "aws_security_group" "app_ec2" {
   }
 }
 
-#########################
+
 # IAM for EC2           #
-#########################
+
 
 # Role so EC2 can talk to ECR + SSM
 resource "aws_iam_role" "app_ec2_role" {
@@ -100,9 +100,9 @@ resource "aws_iam_instance_profile" "app_ec2_profile" {
   role = aws_iam_role.app_ec2_role.name
 }
 
-#########################
+
 # Launch template       #
-#########################
+
 
 resource "aws_launch_template" "app" {
   name_prefix   = "${var.project}-app-"
@@ -170,9 +170,9 @@ resource "aws_launch_template" "app" {
   }
 }
 
-#########################
-# Auto Scaling Group    #
-#########################
+
+# Auto Scaling Group
+
 
 resource "aws_autoscaling_group" "app" {
   name              = "${var.project}-app-asg"
@@ -202,9 +202,7 @@ resource "aws_autoscaling_group" "app" {
   }
 }
 
-#########################
-# Output for backend    #
-#########################
+
 
 # Discover the instances created by the ASG
 data "aws_instances" "app" {
