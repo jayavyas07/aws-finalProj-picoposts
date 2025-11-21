@@ -13,7 +13,7 @@ type ReviewCycle struct {
 
 type Goal struct {
 	ID          uint   `gorm:"primaryKey"`
-	UserID      uint   `gorm:"not null"`
+	UserID      uint   `gorm:"not null;constraint:OnDelete:CASCADE"`
 	CycleID     uint   `gorm:"not null"`
 	Title       string `gorm:"size:140;not null"`
 	Description string
@@ -25,7 +25,7 @@ type Goal struct {
 
 type SelfAssessment struct {
 	ID          uint `gorm:"primaryKey"`
-	UserID      uint `gorm:"not null"`
+	UserID      uint `gorm:"not null;constraint:OnDelete:CASCADE"`
 	CycleID     uint `gorm:"not null"`
 	Comments    string
 	Rating      *int
@@ -34,8 +34,8 @@ type SelfAssessment struct {
 
 type ManagerReview struct {
 	ID         uint `gorm:"primaryKey"`
-	EmployeeID uint `gorm:"not null"`
-	ReviewerID uint `gorm:"not null"`
+	EmployeeID uint `gorm:"not null;constraint:OnDelete:CASCADE"`
+	ReviewerID uint `gorm:"not null;constraint:OnDelete:CASCADE"`
 	CycleID    uint `gorm:"not null"`
 	Rating     int  `gorm:"not null"`
 	Comments   string

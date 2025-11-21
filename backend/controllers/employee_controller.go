@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"peoplesoft/config"
 	"peoplesoft/models"
@@ -75,10 +76,19 @@ func ListEmployees(c *gin.Context) {
 func CreateEmployee(c *gin.Context) {
 	var emp models.Employee
 	if err := c.ShouldBindJSON(&emp); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input: " + err.Error()})
 		return
 	}
-	config.DB.Create(&emp)
+
+	// Add logging
+	fmt.Printf("Creating employee: %+v\n", emp)
+
+	if err := config.DB.Create(&emp).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create employee: " + err.Error()})
+		return
+	}
+
+	fmt.Printf("Employee created with ID: %d\n", emp.ID)
 	c.JSON(http.StatusCreated, gin.H{"data": emp})
 }
 

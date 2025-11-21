@@ -3,6 +3,7 @@ package routes
 import (
 	"fmt"
 	"peoplesoft/controllers"
+	"peoplesoft/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,28 +16,22 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	api := r.Group("/api")
-	// err := api.Use(middleware.AuthRequired())
-	// if err != nil {
-	// 	fmt.Println("auth error")
-	// } else {
-
-	// }
+	api.Use(middleware.AuthRequired())
 	{
 		// Employees
 		fmt.Println("test befote")
-		api.GET("/employees", controllers.ListEmployees)         // EMP-1, EMP-2
-		api.GET("/employees/:id", controllers.GetEmployee)       // for profile detail
-		api.POST("/employees", controllers.CreateEmployee)       // EMP-3 (admin)
-		api.PUT("/employees/:id", controllers.UpdateEmployee)    // EMP-3 (admin)
-		api.DELETE("/employees/:id", controllers.DeleteEmployee) // EMP-3 (admin)
+		api.GET("/employees", controllers.ListEmployees)
+		api.GET("/employees/:id", controllers.GetEmployee)
+		api.POST("/employees", controllers.CreateEmployee)
+		api.PUT("/employees/:id", controllers.UpdateEmployee)
+		api.DELETE("/employees/:id", controllers.DeleteEmployee)
 		api.GET("/my-team", controllers.ListMyTeam)
 
-		// api.POST("/employees", middleware.RequireRole("admin"), controllers.CreateEmployee)
-		// api.PUT("/employees/:id", middleware.RequireRole("admin", "manager"), controllers.UpdateEmployee)
-		// api.DELETE("/employees/:id", middleware.RequireRole("admin"), controllers.DeleteEmployee)
+		api.GET("/users/by-email/:email", controllers.GetUserByEmail)
+		api.DELETE("/users/:id", controllers.DeleteUser)
 
 		// Manager team
-		api.GET("/managers/:managerId/team", controllers.ListTeam) // EMP-4
+		api.GET("/managers/:managerId/team", controllers.ListTeam)
 
 		// Leaves
 		api.GET("/leaves", controllers.ListLeaves)
@@ -50,26 +45,24 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	//pms
-
 	pms := api.Group("/pms")
 	{
 		// Employee
-		pms.POST("/goals", controllers.CreateGoal)    // PERF-1
-		pms.PUT("/goals/:id", controllers.UpdateGoal) // PERF-1
-		pms.GET("/my-goals", controllers.ListMyGoals) // PERF-1
+		pms.POST("/goals", controllers.CreateGoal)
+		pms.PUT("/goals/:id", controllers.UpdateGoal)
+		pms.GET("/my-goals", controllers.ListMyGoals)
 
 		// Manager/Admin
-		pms.GET("/manager/goals", controllers.ManagerListEmployeeGoals) // PERF-2
-		pms.POST("/reviews", controllers.CreateOrUpdateReview)          // PERF-4
+		pms.GET("/manager/goals", controllers.ManagerListEmployeeGoals)
+		pms.POST("/reviews", controllers.CreateOrUpdateReview)
 
 		// Employee self-assessment
-		pms.POST("/self-assess", controllers.SubmitSelfAssessment) // PERF-3
+		pms.POST("/self-assess", controllers.SubmitSelfAssessment)
 
 		// Admin analytics
-		pms.GET("/admin/report", controllers.AdminReport) // PERF-5
+		pms.GET("/admin/report", controllers.AdminReport)
 
 		// History
-		pms.GET("/my-reviews", controllers.MyReviews) // PERF-6
+		pms.GET("/my-reviews", controllers.MyReviews)
 	}
-
 }

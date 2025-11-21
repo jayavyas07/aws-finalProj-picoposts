@@ -9,6 +9,7 @@ import Goals from './pages/Goals'
 import SelfAssessment from './pages/SelfAssessment'
 import ManagerReview from './pages/ManagerReview'
 import PerfReports from './pages/PerfReports'
+import Onboarding from './pages/Onboarding'
 
 const isAuthed = () => !!localStorage.getItem('token')
 
@@ -52,6 +53,8 @@ export default function App() {
 <Route path="/self-assessment" element={<Navigate to="/performance" replace />} />
 <Route path="/manager/review" element={<Navigate to="/performance" replace />} />
 <Route path="/reports/performance" element={<Navigate to="/performance" replace />} />
+
+    
       </Routes>
     </div>
   )

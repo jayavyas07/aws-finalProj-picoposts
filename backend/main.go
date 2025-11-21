@@ -25,6 +25,7 @@ func main() {
 		if err := config.DB.AutoMigrate(
 			&models.User{},
 			&models.Employee{},
+			&models.Department{},
 			&models.Leave{},
 			&models.Performance{},
 			&models.ReviewCycle{}, &models.Goal{}, &models.SelfAssessment{}, &models.ManagerReview{},

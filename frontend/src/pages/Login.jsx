@@ -19,6 +19,8 @@ export default function Login(){
       }
       const { data } = await client.post('/api/auth/login', { email, password })
       localStorage.setItem('token', data.token)
+      localStorage.setItem('role', data.role)
+      localStorage.setItem('email', data.email)
       nav('/')
     } catch (err) {
       setError(err?.response?.data?.error || 'Failed')

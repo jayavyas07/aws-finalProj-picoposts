@@ -7,8 +7,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtKey = []byte(os.Getenv("JWT_SECRET"))
-
 type Claims struct {
 	Email string `json:"email"`
 	Role  string `json:"role"`
@@ -27,5 +25,5 @@ func GenerateToken(email, role string) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
+	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 }

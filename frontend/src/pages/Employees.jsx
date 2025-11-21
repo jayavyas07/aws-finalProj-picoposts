@@ -19,7 +19,12 @@ export default function Employees(){
   const [showModal, setShowModal] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
   const [currentId, setCurrentId] = useState(null)
+  const [currentUserId, setCurrentUserId] = useState(null)
   const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    user_role: 'employee',
     user_id: '',
     designation: '',
     department_id: '',
@@ -29,7 +34,12 @@ export default function Employees(){
   })
   const [err, setErr] = useState('')
 
-  // 🔹 My Team toggle lives INSIDE the component
+  const managerNameById = useMemo(() => {
+    const m = new Map()
+    rows.forEach(r => m.set(r.id, r.name))
+    return m
+  }, [rows])
+
   const [myTeamMode, setMyTeamMode] = useState(false)
 
   const queryString = useMemo(() => {
@@ -42,15 +52,38 @@ export default function Employees(){
     return p.toString()
   }, [q, designation, departmentId, page, size])
 
-  // 🔹 load() switches endpoint based on myTeamMode
   const load = async () => {
     const url = myTeamMode ? '/api/my-team' : `/api/employees?${queryString}`
     const { data } = await client.get(url)
-    setRows(data.data || [])
+    
+    let filteredRows = data.data || []
+    
+    if (myTeamMode) {
+      if (q) {
+        const lowerQ = q.toLowerCase()
+        filteredRows = filteredRows.filter(r => 
+          r.name?.toLowerCase().includes(lowerQ) || 
+          r.email?.toLowerCase().includes(lowerQ)
+        )
+      }
+      if (designation) {
+        const lowerDesig = designation.toLowerCase()
+        filteredRows = filteredRows.filter(r => 
+          r.designation?.toLowerCase().includes(lowerDesig)
+        )
+      }
+      if (departmentId) {
+        filteredRows = filteredRows.filter(r => 
+          String(r.department_id) === departmentId
+        )
+      }
+    }
+    
+    setRows(filteredRows)
     setTotal(
       typeof data.total === 'number'
         ? data.total
-        : (data.data ? data.data.length : 0)
+        : filteredRows.length
     )
   }
 
@@ -60,7 +93,19 @@ export default function Employees(){
   const openAdd = () => {
     setIsEdit(false)
     setCurrentId(null)
-    setForm({ user_id:'', designation:'', department_id:'', manager_id:'', phone:'', location:'' })
+    setCurrentUserId(null)
+    setForm({ 
+      name: '',
+      email: '',
+      password: '',
+      user_role: 'employee',
+      user_id:'', 
+      designation:'', 
+      department_id:'', 
+      manager_id:'', 
+      phone:'', 
+      location:'' 
+    })
     setErr('')
     setShowModal(true)
   }
@@ -68,7 +113,12 @@ export default function Employees(){
   const openEdit = (row) => {
     setIsEdit(true)
     setCurrentId(row.id)
+    setCurrentUserId(row.user_id)
     setForm({
+      name: row.name || '',
+      email: row.email || '',
+      password: '',
+      user_role: 'employee',
       user_id: row.user_id ?? '',
       designation: row.designation || '',
       department_id: row.department_id || '',
@@ -94,15 +144,29 @@ export default function Employees(){
         }
         await client.put(`/api/employees/${currentId}`, payload)
       } else {
-        const payload = {
-          user_id: Number(form.user_id),
+        // Onboarding: Create user first, then employee
+        const userPayload = {
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          role: form.user_role,
+          department_id: form.department_id ? Number(form.department_id) : null
+        }
+        
+        await client.post('/api/auth/register', userPayload)
+        
+        const { data: userData } = await client.get(`/api/users/by-email/${form.email}`)
+        console.log('User data received:', userData)
+        const employeePayload = {
+          user_id: userData.id,
           designation: form.designation,
           department_id: form.department_id ? Number(form.department_id) : 0,
           manager_id: form.manager_id ? Number(form.manager_id) : null,
           phone: form.phone,
           location: form.location
         }
-        await client.post('/api/employees', payload)
+        console.log('Employee payload:', employeePayload)  
+        await client.post('/api/employees', employeePayload)
       }
       setShowModal(false)
       await load()
@@ -111,10 +175,16 @@ export default function Employees(){
     }
   }
 
-  const del = async (id) => {
-    if (!confirm('Delete this employee?')) return
-    await client.delete(`/api/employees/${id}`)
-    await load()
+  const offboard = async (employeeId, userId, employeeName) => {
+    if (!window.confirm(`Are you sure you want to offboard ${employeeName}?`)) return
+    
+    try {
+      await client.delete(`/api/employees/${employeeId}`)
+      await client.delete(`/api/users/${userId}`)
+      await load()
+    } catch (e) {
+      alert('Offboarding failed: ' + (e?.response?.data?.error || 'Unknown error'))
+    }
   }
 
   return (
@@ -132,11 +202,11 @@ export default function Employees(){
         )}
 
         {role === 'admin' && (
-          <button className="btn btn-primary" onClick={openAdd}>+ Add Employee</button>
+          <button className="btn btn-primary" onClick={openAdd}>Onboard</button>
         )}
       </div>
 
-      {/* Filters (disabled in My Team mode except search) */}
+      {/* Filters */}
       <div className="card card-body mb-3">
         <div className="row g-2">
           <div className="col-md-4">
@@ -145,13 +215,11 @@ export default function Employees(){
           </div>
           <div className="col-md-3">
             <input className="form-control" placeholder="Designation"
-              value={designation} onChange={e=>{setPage(1); setDesignation(e.target.value)}}
-              disabled={myTeamMode} />
+              value={designation} onChange={e=>{setPage(1); setDesignation(e.target.value)}} />
           </div>
           <div className="col-md-3">
             <input className="form-control" placeholder="Department ID"
-              value={departmentId} onChange={e=>{setPage(1); setDepartmentId(e.target.value)}}
-              disabled={myTeamMode} />
+              value={departmentId} onChange={e=>{setPage(1); setDepartmentId(e.target.value)}} />
           </div>
           <div className="col-md-2">
             <select className="form-select" value={size}
@@ -169,8 +237,10 @@ export default function Employees(){
       <table className="table table-striped">
         <thead><tr>
           <th>Name</th><th>Email</th><th>Designation</th>
-          <th>Dept</th><th>ManagerID</th><th>Phone</th><th>Location</th>
-          {(role === 'admin' || role === 'manager') && <th style={{width:160}}>Actions</th>}
+          <th>Dept</th>
+          {!myTeamMode && <th>Manager</th>}
+          <th>Phone</th><th>Location</th>
+          {(role === 'admin' || role === 'manager') && <th style={{width:200}}>Actions</th>}
         </tr></thead>
         <tbody>
           {rows.map(r => (
@@ -179,15 +249,17 @@ export default function Employees(){
               <td>{r.email}</td>
               <td>{r.designation}</td>
               <td>{r.department_id}</td>
-              <td>{r.manager_id ?? '-'}</td>
+              {!myTeamMode && <td>{r.manager_id ? (managerNameById.get(r.manager_id) || '-') : '-'}</td>}
               <td>{r.phone}</td>
               <td>{r.location}</td>
               {(role === 'admin' || role === 'manager') && (
-                <td className="d-flex gap-2">
-                  <button className="btn btn-sm btn-secondary" onClick={()=>openEdit(r)}>Edit</button>
-                  {role === 'admin' && (
-                    <button className="btn btn-sm btn-danger" onClick={()=>del(r.id)}>Delete</button>
-                  )}
+                <td>
+                  <div className="d-flex gap-2">
+                    <button className="btn btn-sm btn-secondary" onClick={()=>openEdit(r)}>Edit</button>
+                    {role === 'admin' && (
+                      <button className="btn btn-sm btn-danger" onClick={()=>offboard(r.id, r.user_id, r.name)}>Offboard</button>
+                    )}
+                  </div>
                 </td>
               )}
             </tr>
@@ -205,61 +277,90 @@ export default function Employees(){
 
       {/* Modal */}
       {showModal && (
-        <div className="modal d-block" tabIndex="-1">
-          <div className="modal-dialog">
+        <div className="modal d-block" tabIndex="-1" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
+          <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <form onSubmit={save}>
                 <div className="modal-header">
-                  <h5 className="modal-title">{isEdit ? 'Edit Employee' : 'Add Employee'}</h5>
+                  <h5 className="modal-title">{isEdit ? 'Edit Employee' : 'Onboard Employee'}</h5>
                   <button type="button" className="btn-close" onClick={()=>setShowModal(false)}></button>
                 </div>
                 <div className="modal-body">
                   {err && <div className="alert alert-danger">{err}</div>}
 
                   {!isEdit && (
-                    <div className="mb-3">
-                      <label className="form-label">User ID (required)</label>
-                      <input className="form-control" value={form.user_id}
-                        onChange={e=>setForm({...form, user_id:e.target.value})} required />
-                    </div>
+                    <>
+                      <div className="row g-3 mb-3">
+                        <div className="col-md-6">
+                          <label className="form-label">Full Name *</label>
+                          <input className="form-control" value={form.name}
+                            onChange={e=>setForm({...form, name:e.target.value})} required />
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label">Email *</label>
+                          <input type="email" className="form-control" value={form.email}
+                            onChange={e=>setForm({...form, email:e.target.value})} autoComplete="new-email" required />
+                            
+                        </div>
+                      </div>
+
+                      <div className="row g-3 mb-3">
+                        <div className="col-md-6">
+                          <label className="form-label">Password *</label>
+                          <input type="password" className="form-control" value={form.password}
+                            onChange={e=>setForm({...form, password:e.target.value})} autoComplete="new-password" required />
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label">Role *</label>
+                          <select className="form-select" value={form.user_role}
+                            onChange={e=>setForm({...form, user_role:e.target.value})} required>
+                            <option value="employee">Employee</option>
+                            <option value="manager">Manager</option>
+                            <option value="admin">HR/Admin</option>
+                          </select>
+                        </div>
+                      </div>
+                    </>
                   )}
 
-                  <div className="mb-3">
-                    <label className="form-label">Designation</label>
-                    <input className="form-control" value={form.designation}
-                      onChange={e=>setForm({...form, designation:e.target.value})} />
+                  <div className="row g-3 mb-3">
+                    <div className="col-md-6">
+                      <label className="form-label">Designation *</label>
+                      <input className="form-control" value={form.designation}
+                        onChange={e=>setForm({...form, designation:e.target.value})} required />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Department ID *</label>
+                      <input type="number" className="form-control" value={form.department_id}
+                        onChange={e=>setForm({...form, department_id:e.target.value})} required />
+                    </div>
                   </div>
 
-                  <div className="row g-2">
-                    <div className="col">
-                      <label className="form-label">Department ID</label>
-                      <input className="form-control" value={form.department_id}
-                        onChange={e=>setForm({...form, department_id:e.target.value})} />
-                    </div>
-                    <div className="col">
+                  <div className="row g-3 mb-3">
+                    <div className="col-md-6">
                       <label className="form-label">Manager ID</label>
-                      <input className="form-control" value={form.manager_id}
+                      <input type="number" className="form-control" value={form.manager_id}
                         onChange={e=>setForm({...form, manager_id:e.target.value})} />
                     </div>
-                  </div>
-
-                  <div className="row g-2 mt-2">
-                    <div className="col">
+                    <div className="col-md-6">
                       <label className="form-label">Phone</label>
                       <input className="form-control" value={form.phone}
                         onChange={e=>setForm({...form, phone:e.target.value})} />
                     </div>
-                    <div className="col">
-                      <label className="form-label">Location</label>
-                      <input className="form-control" value={form.location}
-                        onChange={e=>setForm({...form, location:e.target.value})} />
-                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Location</label>
+                    <input className="form-control" value={form.location}
+                      onChange={e=>setForm({...form, location:e.target.value})} />
                   </div>
                 </div>
 
                 <div className="modal-footer">
                   <button type="button" className="btn btn-outline-secondary" onClick={()=>setShowModal(false)}>Cancel</button>
-                  <button type="submit" className="btn btn-primary">{isEdit ? 'Save changes' : 'Create'}</button>
+                  <button type="submit" className="btn btn-primary">
+                    {isEdit ? 'Save Changes' : 'Onboard Employee'}
+                  </button>
                 </div>
               </form>
             </div>
