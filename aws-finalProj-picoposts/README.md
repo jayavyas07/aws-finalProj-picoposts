@@ -112,7 +112,7 @@ docker buildx build \
   --push
 ```
 
-> 📝 **Save the image URI** — you'll need it for Terraform configuration
+> 📝 **Should Save the image URI** — we'll need it for Terraform configuration
 
 ---
 
