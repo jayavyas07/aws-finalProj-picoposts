@@ -17,7 +17,16 @@ if (!DB_HOST_WRITE || !DB_USER || !DB_NAME || !DB_PASSWORD) {
 }
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: "*",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+    allowedHeaders: "Content-Type,Authorization",
+    credentials: false
+}));
+
+// Required to handle preflight correctly
+app.options("*", cors());
+
 app.use(express.json());
 app.use(bodyParser.json());
 

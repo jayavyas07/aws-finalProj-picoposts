@@ -15,15 +15,50 @@ data "aws_iam_policy_document" "ec2_trust" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_instance_AmazonEC2ContainerServiceforEC2Role" {
-  role       = aws_iam_role.ecs_instance_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+resource "aws_iam_role_policy" "ecs_instance_minimal" {
+  name = "${var.project}-ecs-instance-minimal"
+  role = aws_iam_role.ecs_instance_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      # --- ECS agent minimal permissions ---
+      {
+        Effect = "Allow",
+        Action = [
+          "ecs:RegisterContainerInstance",
+          "ecs:DeregisterContainerInstance",
+          "ecs:DiscoverPollEndpoint",
+          "ecs:Submit*",
+          "ecs:Poll"
+        ],
+        Resource = "*"
+      },
+
+      # --- CloudWatch logs only for this app ---
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/${var.project}:*"
+      },
+
+      # --- ECR read only for ONE repo ---
+      {
+        Effect = "Allow",
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer"
+        ],
+        Resource = "arn:aws:ecr:${var.region}:${data.aws_caller_identity.current.account_id}:repository/${var.project}-api"
+      }
+    ]
+  })
 }
 
-resource "aws_iam_role_policy_attachment" "ecr_read" {
-  role       = aws_iam_role.ecs_instance_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-}
 
 resource "aws_iam_instance_profile" "ecs_instance_profile" {
   name = "${var.project}-ecs-instance-profile"

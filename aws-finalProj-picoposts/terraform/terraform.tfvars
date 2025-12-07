@@ -1,5 +1,5 @@
 region              = "us-west-1"
-project             = "aws-finalProj-picoposts"
+project             = "picoposts-v2"
 instance_type       = "t3.micro"
 db_engine           = "mysql"
 db_engine_version   = "8.0"

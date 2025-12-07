@@ -22,30 +22,24 @@ data "aws_ami" "amazon_linux2" {
 
 resource "aws_security_group" "app_ec2" {
   name        = "${var.project}-app-ec2-sg"
-  description = "Allow HTTP from internet to app EC2"
   vpc_id      = aws_vpc.this.id
 
   ingress {
-    description = "HTTP from anywhere"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 3000
+    to_port         = 3000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
   }
 
   egress {
-    description = "All outbound"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  tags = {
-    Project = var.project
-    Name    = "${var.project}-app-ec2-sg"
-  }
 }
+
+
 
 
 # IAM for EC2           #

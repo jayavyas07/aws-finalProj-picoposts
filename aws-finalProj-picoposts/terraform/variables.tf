@@ -1,6 +1,6 @@
 # General
 variable "project" {
-  default = "aws-finalProj-picoposts"
+  default = "picoposts-v2"
 }
 
 variable "region" {

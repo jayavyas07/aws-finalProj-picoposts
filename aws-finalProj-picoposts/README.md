@@ -19,27 +19,44 @@ PicoPosts is a full-stack cloud application built to showcase modern AWS service
 ## 🏗️ Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    CloudFront (CDN)                      │
-│                     HTTPS Distribution                   │
-└────┬───────────────────────────────────────────┬────────┘
-     │                                           │
-     │ Static Assets                        │ API Calls
-     ▼                                           ▼
-┌─────────────┐                      ┌──────────────────┐
-│   S3 Bucket │                      │   EC2 Instance   │
-│  (Frontend) │                      │  + Node.js API   │
-│ HTML/CSS/JS │                      │  (Docker)        │
-└─────────────┘                      └────────┬─────────┘
-                                              │
-                         ┌────────────────────┼────────────────┐
-                         │                    │                │
-                         ▼                    ▼                ▼
-                  ┌─────────────┐     ┌─────────────┐  ┌──────────┐
-                  │  RDS MySQL  │     │     SSM     │  │   ECR    │
-                  │  (Private)  │     │  Parameter  │  │  Docker  │
-                  │   Database  │     │    Store    │  │  Images  │
-                  └─────────────┘     └─────────────┘  └──────────┘
+                          ┌───────────────────────────┐
+                          │        CloudFront         │
+                          │  (S3 static frontend +    │
+                          │   API routing /api/* )    │
+                          └─────────────┬─────────────┘
+                                        │
+                                        ▼
+                         ┌─────────────────────────────┐
+                         │     Application Load Balancer│
+                         │   (public, only port 80 open)│
+                         └─────────────┬───────────────┘
+                                        │
+                           ALB -> EC2 on port 3000
+                                        │
+                                        ▼
+                         ┌──────────────────────────────┐
+                         │      EC2 Instance (App)       │
+                         │  - Runs backend-api in Docker │
+                         │  - IAM role with least priv.  │
+                         │  - Pulls DB password from SSM │
+                         │  - In private subnet through   │
+                         │    route via NAT/alb          │
+                         └──────────────┬────────────────┘
+                                        │
+                                        ▼
+               ┌─────────────────────────────────────────────┐
+               │         RDS MySQL (Private Subnet)          │
+               │  - No public access                         │
+               │  - Only EC2 security group allowed          │
+               │  - Stores users + posts                     │
+               └─────────────────────────────────────────────┘
+
+                         ┌────────────────────────────┐
+                         │  SSM Parameter Store        │
+                         │  - Stores DB password       │
+                         │  - EC2 fetches via IAM role │
+                         └────────────────────────────┘
+
 ```
 
 **All infrastructure provisioned with Terraform**

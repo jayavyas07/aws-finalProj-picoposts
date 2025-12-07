@@ -1,7 +1,7 @@
 # Generate a random DB password
 resource "random_password" "db" {
   length  = 20
-  special = true
+  special = false
 }
 
 # Store DB password in SSM Parameter Store (avoid reserved /aws prefix)

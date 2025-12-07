@@ -1,7 +1,7 @@
 
-const API_BASE = "http://13.56.79.179";
+const API_BASE = "/api";
 
-// Simple helper for API calls
+
 async function api(path, options = {}) {
     const res = await fetch(`${API_BASE}${path}`, {
         headers: { "Content-Type": "application/json" },
@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const data = await api("/api/users", {
+            const data = await api("/users", {
                 method: "POST",
                 body: JSON.stringify({ email }),
             });
@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const data = await api("/api/posts", {
+            const data = await api("/posts", {
                 method: "POST",
                 body: JSON.stringify({ userId, content }),
             });
@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const data = await api(`/api/feed?userId=${encodeURIComponent(userId)}`);
+            const data = await api(`/feed?userId=${encodeURIComponent(userId)}`);
             console.log("Feed response", data);
             showJson(data);
         } catch (err) {
